@@ -27,14 +27,8 @@ extern "C" void app_main(void)
         return;
     }
 
-    while (true) {
-        ESP_LOGI(TAG, "Taking picture...");
-        if (camera_capture() == ESP_OK) {
-            ESP_LOGI(TAG, "Picture taken!");
-        }
-        vTaskDelay(pdMS_TO_TICKS(5000));  // use pdMS_TO_TICKS
-    }
-
+    FbPtr fb = camera.capture();
+    
     // (Unreachable)
     std::cout << "Done!" << std::endl;
 }
