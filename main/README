@@ -1,0 +1,25 @@
+Project Issues Log:
+
+for any camera related issues:
+https://components.espressif.com/components/espressif/esp32-camera/versions/2.0.4?language=en
+
+oct 26:
+all the psram issue is because I selected the wrong board make sure your device target match the chip you are using
+
+oct 27:
+The esp documentation has a chatbot and apparently you need to enable psram with the require esp_psram in the cmakelist
+PSRAM is fully setup: 
+1. define it in the require in cmakelist in main root
+2. enable it through the esp32 menuconfig ESP32 PSRAM under component config (you wont see this option without step 1). Make sure to save config
+3. include it in the #include
+
+I think the best way to maintain the project is to implment everythings in the OOP wrapped the C functionality and in appmain only use the class modules/components. Do not directly use the C low level functionality.
+
+Project direction:
+easy step first:
+Keep MJPEG for videos + a websocket for command to control car
+/stream -> MJPEG loop
+/ws -> websocket endpoint for bidirectional control messages
+
+A more advanced version which will be low latency setup:
+do both MJPEN for videos and command to control car on websocket server.

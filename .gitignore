@@ -1,0 +1,8 @@
+# Build and Configuration Outputs
+build/
+sdkconfig
+sdkconfig.old
+
+# Component Manager Downloads
+managed_components/
+dependencies.lock

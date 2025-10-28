@@ -1,0 +1,8 @@
+menu "Car Profiles"
+config PROFILE_FPV
+    bool "Enable FPV (camera + web)"
+    default y
+config PROFILE_MIN
+    bool "Minimal RC (web + motors only)"
+    default n
+endmenu
