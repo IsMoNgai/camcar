@@ -23,3 +23,7 @@ Keep MJPEG for videos + a websocket for command to control car
 
 A more advanced version which will be low latency setup:
 do both MJPEN for videos and command to control car on websocket server.
+
+oct 29:
+The documentation that has AI chatbot really cool!!!
+https://docs.espressif.com/projects/esp-idf/en/latest/esp32/

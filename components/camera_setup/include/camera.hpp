@@ -38,6 +38,13 @@ struct FbDeleter{
 // type alias for the unique_ptr
 using FbPtr = std::unique_ptr<camera_fb_t, FbDeleter>;
 
+// Jpeg converting class
+struct MallocDeleter{
+    void operator()(uint8_t* p) const { if (p) free(p); }
+};
+
+using JpegBufPtr = std::unique_ptr<uint8_t, MallocDeleter>;
+
 class Camera {
 public:
     // NOTE: explicit keyword is used to avoid cfg being auto converted to camera_config_t causing error 
@@ -50,6 +57,24 @@ public:
     }
 
     bool ok() const { return inited_; }
+
+    JpegBufPtr convert_to_jpeg(const FbPtr& fb, uint8_t quality, size_t* out_len) {
+        if (!fb || fb->format != PIXFORMAT_JPEG) {
+            return JpegBufPtr(nullptr);
+        }
+
+        uint8_t* jpg_buf = NULL;
+        size_t jpg_buf_len = 0;
+
+        bool jpeg_converted = frame2jpg(fb.get(), quality, &jpg_buf, &jpg_buf_len);
+
+        if (jpeg_converted) {
+            *out_len = jpg_buf_len;
+            return JpegBufPtr(jpg_buf);
+        }
+
+        return JpegBufPtr(nullptr);
+    }
 
     FbPtr capture() const {
         /*
@@ -73,6 +98,8 @@ public:
         }
         return false;
     }
+
+    
 
     // Disallow copy, allow move
     // Disable copy constructor and copy assignment operator

@@ -1,19 +1,31 @@
-#include "esp_camera.h"
-#include "esp_http_server.h"
-#include "esp_timer.h"
+#include <iostream>
 
+#include "camera.hpp"
+
+extern "C" {
+    #include "esp_camera.h"
+    #include "esp_http_server.h"
+    #include "esp_timer.h"
+}
+
+#define TAG "http_server"
 #define PART_BOUNDARY "123456789000000000000987654321"
 static const char* _STREAM_CONTENT_TYPE = "multipart/x-mixed-replace;boundary=" PART_BOUNDARY;
 static const char* _STREAM_BOUNDARY = "\r\n--" PART_BOUNDARY "\r\n";
 static const char* _STREAM_PART = "Content-Type: image/jpeg\r\nContent-Length: %zu\r\n\r\n";
 
-esp_err_t jpg_stream_httpd_handler(httpd_req_t *req){
-    camera_fb_t * fb = NULL;
+esp_err_t jpg_stream_httpd_handler(httpd_req_t *req, Camera camera){
+    FbPtr fb = NULL;
     esp_err_t res = ESP_OK;
     size_t jpg_buf_len = 0;
     uint8_t * jpg_buf = NULL;
+
     char part_buf[64];
     static int64_t last_frame = 0;
+
+    const uint8_t* data_ptr = nullptr;
+    size_t data_len = 0;
+    
     if(!last_frame) {
         last_frame = esp_timer_get_time();
     }
@@ -24,30 +36,33 @@ esp_err_t jpg_stream_httpd_handler(httpd_req_t *req){
     }
 
     while(true){
-        fb = esp_camera_fb_get();
-        if (!fb) {
-            ESP_LOGE(TAG, "Camera capture failed");
-            res = ESP_FAIL;
-            break;
-        }
+        FbPtr fb = camera.capture();
+
+        JpegBufPtr converted_jpg = nullptr;
+
         if(fb->format != PIXFORMAT_JPEG){
-            bool jpeg_converted = frame2jpg(fb, 80, &jpg_buf, &jpg_buf_len);
-            if(!jpeg_converted){
+            converted_jpg = camera.convert_to_jpg(fb, 80, &data_len);
+            if(!converted_jpg){
                 ESP_LOGE(TAG, "JPEG compression failed");
-                esp_camera_fb_return(fb);
                 res = ESP_FAIL;
                 break;
             }
+            data_ptr = converted_jpg.get();
         } else {
-            jpg_buf_len = fb->len;
-            jpg_buf = fb->buf;
+            data_len = fb->len;
+            data_ptr = fb->buf;
+        }
+
+        if (data_ptr == NULL) { 
+            res = ESP_FAIL; 
+            break; 
         }
 
         if(res == ESP_OK){
             res = httpd_resp_send_chunk(req, _STREAM_BOUNDARY, strlen(_STREAM_BOUNDARY));
         }
         if(res == ESP_OK){
-            int hlen = snprintf(part_buf, sizeof(part_buf), _STREAM_PART, jpg_buf_len);
+            int hlen = snprintf(part_buf, sizeof(part_buf), _STREAM_PART, data_len);
             if(hlen < 0 || hlen >= sizeof(part_buf)){
                 ESP_LOGE(TAG, "Header truncated (%d bytes needed >= %zu buffer)",
                          hlen, sizeof(part_buf));
@@ -57,15 +72,13 @@ esp_err_t jpg_stream_httpd_handler(httpd_req_t *req){
             }
         }
         if(res == ESP_OK){
-            res = httpd_resp_send_chunk(req, (const char *)jpg_buf, jpg_buf_len);
+            res = httpd_resp_send_chunk(req, (const char *)data_ptr, data_len);
         }
-        if(fb->format != PIXFORMAT_JPEG){
-            free(jpg_buf);
-        }
-        esp_camera_fb_return(fb);
+ 
         if(res != ESP_OK){
             break;
         }
+
         int64_t fr_end = esp_timer_get_time();
         int64_t frame_time = fr_end - last_frame;
         last_frame = fr_end;
