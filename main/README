@@ -27,3 +27,11 @@ do both MJPEN for videos and command to control car on websocket server.
 oct 29:
 The documentation that has AI chatbot really cool!!!
 https://docs.espressif.com/projects/esp-idf/en/latest/esp32/
+
+Is not building but will be fixed soon
+httpserver code is mostly done.
+
+oct 30:
+goal:
+add motor driver
+add webserver

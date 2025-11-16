@@ -12,8 +12,8 @@ extern "C" {
 #include <vector>
 
 // WROVER-KIT (OV2640) pin map
-#define CAM_PIN_PWDN    GPIO_NUM_NC   // not used
-#define CAM_PIN_RESET   GPIO_NUM_NC   // not used (software reset)
+#define CAM_PIN_PWDN    GPIO_NUM_NC
+#define CAM_PIN_RESET   GPIO_NUM_NC
 #define CAM_PIN_XCLK    GPIO_NUM_21
 #define CAM_PIN_SIOD    GPIO_NUM_26
 #define CAM_PIN_SIOC    GPIO_NUM_27
@@ -35,10 +35,12 @@ extern "C" {
 struct FbDeleter{
     void operator()(camera_fb_t* p) const { if (p) esp_camera_fb_return(p); }
 };
+
 // type alias for the unique_ptr
 using FbPtr = std::unique_ptr<camera_fb_t, FbDeleter>;
 
 // Jpeg converting class
+// this pointer is a C defined pointer which used malloc. That's why we need to use free here.
 struct MallocDeleter{
     void operator()(uint8_t* p) const { if (p) free(p); }
 };
@@ -136,8 +138,8 @@ private:
             .ledc_channel = LEDC_CHANNEL_0,
         
             .pixel_format = PIXFORMAT_JPEG,    // (use JPEG for best perf on ESP32)
-            .frame_size   = FRAMESIZE_UXGA,    // change later as needed
-            .jpeg_quality = 12,                // lower is higher quality
+            .frame_size   = FRAMESIZE_SVGA,    // change later as needed
+            .jpeg_quality = 20,                // lower is higher quality
             .fb_count     = 1,
             .fb_location  = CAMERA_FB_IN_PSRAM,
             .grab_mode    = CAMERA_GRAB_WHEN_EMPTY
